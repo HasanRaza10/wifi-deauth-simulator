@@ -7,21 +7,22 @@ export interface SavedPassword {
   created_at: string;
 }
 
+export interface SavedPasswordsRequest {
+  user_id: string;
+}
+
 export interface SavedPasswordsResponse {
   passwords: SavedPassword[];
 }
 
 // List saved passwords (without plaintext)
-export const listPasswords = api<void, SavedPasswordsResponse>(
-  { expose: true, method: "GET", path: "/passwords/list" },
-  async () => {
-    // In a real app, you'd get user_id from auth context
-    const userId = "00000000-0000-0000-0000-000000000001"; // Mock user ID
-
+export const listPasswords = api<SavedPasswordsRequest, SavedPasswordsResponse>(
+  { expose: true, method: "POST", path: "/passwords/list" },
+  async (req) => {
     const passwords = await authDB.queryAll<SavedPassword>`
       SELECT id, domain, created_at
       FROM saved_passwords
-      WHERE user_id = ${userId}
+      WHERE user_id = ${req.user_id}
       ORDER BY created_at DESC
     `;
 

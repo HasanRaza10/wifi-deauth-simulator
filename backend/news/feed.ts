@@ -9,6 +9,7 @@ export interface NewsArticle {
   url: string;
   publishedAt: string;
   description?: string;
+  imageUrl?: string;
 }
 
 export interface NewsFeedRequest {
@@ -45,6 +46,7 @@ export const getNewsFeed = api<NewsFeedRequest, NewsFeedResponse>(
         url: article.url || "",
         publishedAt: article.publishedAt || new Date().toISOString(),
         description: article.description || "",
+        imageUrl: article.urlToImage || null,
       })) || [];
 
       return {
@@ -63,6 +65,7 @@ export const getNewsFeed = api<NewsFeedRequest, NewsFeedResponse>(
             url: "https://example.com/article1",
             publishedAt: new Date().toISOString(),
             description: "Latest trends in cybersecurity threats and how to protect against them.",
+            imageUrl: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&h=200&fit=crop&crop=center",
           },
           {
             title: "Wi-Fi Security Best Practices Updated",
@@ -70,6 +73,7 @@ export const getNewsFeed = api<NewsFeedRequest, NewsFeedResponse>(
             url: "https://example.com/article2",
             publishedAt: new Date(Date.now() - 3600000).toISOString(),
             description: "New guidelines for securing wireless networks against modern attacks.",
+            imageUrl: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400&h=200&fit=crop&crop=center",
           },
         ],
         totalResults: 2,

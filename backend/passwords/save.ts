@@ -3,6 +3,7 @@ import { authDB } from "../auth/db";
 import crypto from "crypto";
 
 export interface SavePasswordRequest {
+  user_id: string;
   domain: string;
   password: string;
 }
@@ -17,9 +18,6 @@ export interface SavePasswordResponse {
 export const savePassword = api<SavePasswordRequest, SavePasswordResponse>(
   { expose: true, method: "POST", path: "/passwords/save" },
   async (req) => {
-    // In a real app, you'd get user_id from auth context
-    const userId = "00000000-0000-0000-0000-000000000001"; // Mock user ID
-
     // Encrypt password (simplified - in production use proper key management)
     const key = crypto.randomBytes(32);
     const iv = crypto.randomBytes(16);
@@ -29,7 +27,7 @@ export const savePassword = api<SavePasswordRequest, SavePasswordResponse>(
 
     const result = await authDB.queryRow<{ id: string; created_at: string }>`
       INSERT INTO saved_passwords (user_id, domain, ciphertext)
-      VALUES (${userId}, ${req.domain}, ${Buffer.from(encrypted, 'hex')})
+      VALUES (${req.user_id}, ${req.domain}, ${Buffer.from(encrypted, 'hex')})
       RETURNING id, created_at
     `;
 

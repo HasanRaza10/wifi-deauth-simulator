@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
-import { Download, Target, Wifi, Monitor, FileDown } from 'lucide-react';
+import { Download, Target, Wifi, Monitor, FileDown, Activity, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import backend from '~backend/client';
 import type { WiFiNetwork } from '~backend/simulation/wifi_list';
 import type { ConnectedDevice } from '~backend/simulation/connected_devices';
@@ -41,6 +41,12 @@ export default function Dashboard() {
     queryFn: () => backend.simulation.getConnectedDevices(),
   });
 
+  const { data: liveActivity, refetch: refetchActivity } = useQuery({
+    queryKey: ['live-activity'],
+    queryFn: () => backend.simulation.getLiveActivity(),
+    refetchInterval: 5000, // Refresh every 5 seconds
+  });
+
   const handleAttack = async (network: WiFiNetwork) => {
     setSelectedNetwork(network);
     setIsAttacking(true);
@@ -56,6 +62,9 @@ export default function Dashboard() {
         title: 'Simulation Started',
         description: `Mock deauth attack on ${network.ssid} initiated`,
       });
+      
+      // Refresh activity feed
+      refetchActivity();
     } catch (error) {
       console.error('Attack simulation error:', error);
       toast({
@@ -116,6 +125,32 @@ export default function Dashboard() {
     return 'bg-red-500';
   };
 
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case 'high':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case 'medium':
+        return <Info className="h-4 w-4 text-yellow-500" />;
+      case 'low':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      default:
+        return <Info className="h-4 w-4 text-blue-500" />;
+    }
+  };
+
+  const getSeverityBadgeVariant = (severity: string) => {
+    switch (severity) {
+      case 'high':
+        return 'destructive';
+      case 'medium':
+        return 'default';
+      case 'low':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
       <LegalBanner />
@@ -127,7 +162,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Device Information */}
         <Card>
           <CardHeader>
@@ -196,6 +231,43 @@ export default function Dashboard() {
               <FileDown className="mr-2 h-4 w-4" />
               Download JSON
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Live Activity Feed */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Activity className="h-5 w-5" />
+              <span>Live Activity</span>
+            </CardTitle>
+            <CardDescription>
+              Real-time network events
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {liveActivity?.events.map((event, index) => (
+                <div key={event.id} className="flex items-start space-x-2 p-2 border border-border rounded-lg">
+                  <div className="mt-0.5">
+                    {getSeverityIcon(event.severity)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <Badge variant={getSeverityBadgeVariant(event.severity)} className="text-xs">
+                        {event.type}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(event.timestamp).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground break-words">
+                      {event.message}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
