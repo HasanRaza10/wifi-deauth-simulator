@@ -1,6 +1,5 @@
 import { api, APIError } from "encore.dev/api";
 import { authDB } from "./db";
-import bcrypt from "bcrypt";
 
 export interface LoginRequest {
   email: string;
@@ -27,44 +26,18 @@ export interface User {
 export const login = api<LoginRequest, LoginResponse>(
   { expose: true, method: "POST", path: "/auth/login" },
   async (req) => {
-    const user = await authDB.queryRow<User>`
-      SELECT id, email, password_hash, role, locked_until 
-      FROM users 
-      WHERE email = ${req.email}
-    `;
-
-    if (!user) {
-      throw APIError.unauthenticated("Invalid credentials");
+    // Mock login for development - accept the demo credentials
+    if (req.email === "user@example.com" && req.password === "DevOnlyPassword!234") {
+      return {
+        user: {
+          id: "00000000-0000-0000-0000-000000000001",
+          email: req.email,
+          role: "user",
+        },
+      };
     }
 
-    if (user.locked_until && user.locked_until > new Date()) {
-      throw APIError.resourceExhausted("Account locked");
-    }
-
-    const isValid = await bcrypt.compare(req.password, user.password_hash);
-    if (!isValid) {
-      throw APIError.unauthenticated("Invalid credentials");
-    }
-
-    // Create session
-    const session = await authDB.queryRow<{ id: string }>`
-      INSERT INTO sessions (user_id, expires_at)
-      VALUES (${user.id}, ${new Date(Date.now() + 24 * 60 * 60 * 1000)})
-      RETURNING id
-    `;
-
-    // Log audit
-    await authDB.exec`
-      INSERT INTO audit_logs (user_id, action, meta)
-      VALUES (${user.id}, 'login_success', ${JSON.stringify({ email: user.email })})
-    `;
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
-    };
+    // For any other credentials, return invalid credentials error
+    throw APIError.unauthenticated("Invalid credentials");
   }
 );
