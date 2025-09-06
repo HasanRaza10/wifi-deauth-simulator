@@ -1,7 +1,4 @@
 import { api, Query } from "encore.dev/api";
-import { secret } from "encore.dev/config";
-
-const newsApiKey = secret("NewsApiKey");
 
 export interface NewsArticle {
   title: string;
@@ -22,62 +19,82 @@ export interface NewsFeedResponse {
   totalResults: number;
 }
 
-// Get cybersecurity news feed
+// Get cybersecurity news feed with fallback mock data
 export const getNewsFeed = api<NewsFeedRequest, NewsFeedResponse>(
   { expose: true, method: "GET", path: "/news/feed" },
   async (req) => {
     const query = req.q || "cybersecurity";
     const page = req.page || 1;
 
-    try {
-      const response = await fetch(
-        `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=en&sortBy=publishedAt&pageSize=20&page=${page}&apiKey=${newsApiKey()}`
+    // Return mock data for demo - no external API dependency
+    const mockArticles: NewsArticle[] = [
+      {
+        title: "New Cybersecurity Threats Emerge in 2024",
+        source: "Security Weekly",
+        url: "https://example.com/article1",
+        publishedAt: new Date().toISOString(),
+        description: "Latest trends in cybersecurity threats and how to protect against them.",
+        imageUrl: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&h=200&fit=crop&crop=center",
+      },
+      {
+        title: "Wi-Fi Security Best Practices Updated",
+        source: "Tech News",
+        url: "https://example.com/article2",
+        publishedAt: new Date(Date.now() - 3600000).toISOString(),
+        description: "New guidelines for securing wireless networks against modern attacks.",
+        imageUrl: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400&h=200&fit=crop&crop=center",
+      },
+      {
+        title: "Zero-Day Vulnerabilities in Popular Router Firmware",
+        source: "Cyber Defense Magazine",
+        url: "https://example.com/article3",
+        publishedAt: new Date(Date.now() - 7200000).toISOString(),
+        description: "Security researchers discover critical flaws in widely-used router firmware.",
+        imageUrl: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=200&fit=crop&crop=center",
+      },
+      {
+        title: "Enterprise Network Security: 2024 Trends",
+        source: "InfoSec Today",
+        url: "https://example.com/article4",
+        publishedAt: new Date(Date.now() - 10800000).toISOString(),
+        description: "How enterprises are adapting their security strategies for modern threats.",
+        imageUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=200&fit=crop&crop=center",
+      },
+      {
+        title: "Password Manager Security: What You Need to Know",
+        source: "Security Focus",
+        url: "https://example.com/article5",
+        publishedAt: new Date(Date.now() - 14400000).toISOString(),
+        description: "Best practices for selecting and using password managers securely.",
+        imageUrl: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=400&h=200&fit=crop&crop=center",
+      },
+      {
+        title: "IoT Device Security: Growing Concerns",
+        source: "Network World",
+        url: "https://example.com/article6",
+        publishedAt: new Date(Date.now() - 18000000).toISOString(),
+        description: "The expanding attack surface of Internet of Things devices.",
+        imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=200&fit=crop&crop=center",
+      },
+    ];
+
+    // Filter articles based on query if not default
+    let filteredArticles = mockArticles;
+    if (query !== "cybersecurity") {
+      filteredArticles = mockArticles.filter(article => 
+        article.title.toLowerCase().includes(query.toLowerCase()) ||
+        article.description?.toLowerCase().includes(query.toLowerCase())
       );
-
-      if (!response.ok) {
-        throw new Error(`News API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      const articles: NewsArticle[] = data.articles?.map((article: any) => ({
-        title: article.title || "No title",
-        source: article.source?.name || "Unknown source",
-        url: article.url || "",
-        publishedAt: article.publishedAt || new Date().toISOString(),
-        description: article.description || "",
-        imageUrl: article.urlToImage || null,
-      })) || [];
-
-      return {
-        articles,
-        totalResults: data.totalResults || 0,
-      };
-    } catch (error) {
-      console.error("News API error:", error);
-      
-      // Return mock data if API fails
-      return {
-        articles: [
-          {
-            title: "New Cybersecurity Threats Emerge in 2024",
-            source: "Security Weekly",
-            url: "https://example.com/article1",
-            publishedAt: new Date().toISOString(),
-            description: "Latest trends in cybersecurity threats and how to protect against them.",
-            imageUrl: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&h=200&fit=crop&crop=center",
-          },
-          {
-            title: "Wi-Fi Security Best Practices Updated",
-            source: "Tech News",
-            url: "https://example.com/article2",
-            publishedAt: new Date(Date.now() - 3600000).toISOString(),
-            description: "New guidelines for securing wireless networks against modern attacks.",
-            imageUrl: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400&h=200&fit=crop&crop=center",
-          },
-        ],
-        totalResults: 2,
-      };
     }
+
+    // Simulate pagination
+    const startIndex = (page - 1) * 20;
+    const endIndex = startIndex + 20;
+    const paginatedArticles = filteredArticles.slice(startIndex, endIndex);
+
+    return {
+      articles: paginatedArticles,
+      totalResults: filteredArticles.length,
+    };
   }
 );

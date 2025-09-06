@@ -1,5 +1,4 @@
 import { api } from "encore.dev/api";
-import { authDB } from "../auth/db";
 
 export interface SavedPassword {
   id: string;
@@ -15,17 +14,24 @@ export interface SavedPasswordsResponse {
   passwords: SavedPassword[];
 }
 
-// List saved passwords (without plaintext)
+// Mock saved passwords for demo
 export const listPasswords = api<SavedPasswordsRequest, SavedPasswordsResponse>(
   { expose: true, method: "POST", path: "/passwords/list" },
   async (req) => {
-    const passwords = await authDB.queryAll<SavedPassword>`
-      SELECT id, domain, created_at
-      FROM saved_passwords
-      WHERE user_id = ${req.user_id}
-      ORDER BY created_at DESC
-    `;
+    // Return mock saved passwords
+    const mockPasswords: SavedPassword[] = [
+      {
+        id: "pwd_001",
+        domain: "github.com",
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+      },
+      {
+        id: "pwd_002", 
+        domain: "google.com",
+        created_at: new Date(Date.now() - 172800000).toISOString(),
+      },
+    ];
 
-    return { passwords };
+    return { passwords: mockPasswords };
   }
 );

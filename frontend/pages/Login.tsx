@@ -27,10 +27,13 @@ export default function Login() {
       let response;
       
       if (isRegisterMode) {
+        if (!email.endsWith('@example.com')) {
+          throw new Error('Only @example.com emails are allowed for this demo');
+        }
         response = await backend.auth.register({ name, email, password });
         toast({
           title: 'Account Created',
-          description: 'Your account has been created successfully. You are now logged in.',
+          description: 'Your demo account has been created successfully.',
         });
       } else {
         response = await backend.auth.login({ email, password });
@@ -52,9 +55,7 @@ export default function Login() {
       console.error('Auth error:', error);
       toast({
         title: isRegisterMode ? 'Registration failed' : 'Login failed',
-        description: isRegisterMode 
-          ? 'Failed to create account. Please try again.'
-          : 'Invalid credentials. Please try again.',
+        description: error instanceof Error ? error.message : 'Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -96,11 +97,11 @@ export default function Login() {
             <Shield className="h-12 w-12 text-primary" />
           </div>
           <CardTitle className="text-2xl">
-            {isRegisterMode ? 'Create Account' : 'Welcome Back'}
+            {isRegisterMode ? 'Create Demo Account' : 'Welcome Back'}
           </CardTitle>
           <CardDescription>
             {isRegisterMode 
-              ? 'Create a new account to access the Wi-Fi security simulation tool'
+              ? 'Create a demo account to access the Wi-Fi security simulation tool'
               : 'Sign in to access the Wi-Fi security simulation tool'
             }
           </CardDescription>
@@ -131,8 +132,13 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
-                placeholder="Enter your email"
+                placeholder={isRegisterMode ? "name@example.com" : "Enter your email"}
               />
+              {isRegisterMode && (
+                <p className="text-xs text-muted-foreground">
+                  Demo accounts must use @example.com email addresses
+                </p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -176,7 +182,7 @@ export default function Login() {
                   {isRegisterMode ? (
                     <UserPlus className="mr-2 h-4 w-4" />
                   ) : null}
-                  {isRegisterMode ? 'Create Account' : 'Sign In'}
+                  {isRegisterMode ? 'Create Demo Account' : 'Sign In'}
                 </>
               )}
             </Button>

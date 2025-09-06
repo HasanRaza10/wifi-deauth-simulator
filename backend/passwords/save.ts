@@ -1,6 +1,4 @@
 import { api } from "encore.dev/api";
-import { authDB } from "../auth/db";
-import crypto from "crypto";
 
 export interface SavePasswordRequest {
   user_id: string;
@@ -14,31 +12,17 @@ export interface SavePasswordResponse {
   created_at: string;
 }
 
-// Save password to encrypted vault
+// Mock password saving for demo
 export const savePassword = api<SavePasswordRequest, SavePasswordResponse>(
   { expose: true, method: "POST", path: "/passwords/save" },
   async (req) => {
-    // Encrypt password (simplified - in production use proper key management)
-    const key = crypto.randomBytes(32);
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipher('aes-256-gcm', key);
-    let encrypted = cipher.update(req.password, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-
-    const result = await authDB.queryRow<{ id: string; created_at: string }>`
-      INSERT INTO saved_passwords (user_id, domain, ciphertext)
-      VALUES (${req.user_id}, ${req.domain}, ${Buffer.from(encrypted, 'hex')})
-      RETURNING id, created_at
-    `;
-
-    if (!result) {
-      throw new Error("Failed to save password");
-    }
-
+    // Generate mock response
+    const id = `pwd_${Date.now()}`;
+    
     return {
-      id: result.id,
+      id,
       domain: req.domain,
-      created_at: result.created_at,
+      created_at: new Date().toISOString(),
     };
   }
 );

@@ -1,5 +1,4 @@
 import { api } from "encore.dev/api";
-import { authDB } from "../auth/db";
 
 export interface DeviceInfoResponse {
   mac_address: string;

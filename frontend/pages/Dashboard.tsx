@@ -29,16 +29,19 @@ export default function Dashboard() {
   const { data: deviceInfo } = useQuery({
     queryKey: ['device-info'],
     queryFn: () => backend.system.getDeviceInfo(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: wifiNetworks } = useQuery({
     queryKey: ['wifi-networks'],
     queryFn: () => backend.simulation.getWiFiList(),
+    staleTime: 30 * 1000, // 30 seconds
   });
 
   const { data: connectedDevices } = useQuery({
     queryKey: ['connected-devices'],
     queryFn: () => backend.simulation.getConnectedDevices(),
+    staleTime: 10 * 1000, // 10 seconds
   });
 
   const { data: liveActivity, refetch: refetchActivity } = useQuery({
@@ -63,9 +66,10 @@ export default function Dashboard() {
         };
       }
     },
-    refetchInterval: 10000, // Refresh every 10 seconds (reduced frequency)
-    retry: 1, // Only retry once on failure
-    retryDelay: 2000, // Wait 2 seconds before retry
+    refetchInterval: 15000, // Refresh every 15 seconds
+    retry: 1,
+    retryDelay: 2000,
+    staleTime: 10 * 1000, // 10 seconds
   });
 
   const handleAttack = async (network: WiFiNetwork) => {
@@ -211,7 +215,11 @@ export default function Dashboard() {
                 </div>
               </>
             ) : (
-              <p className="text-muted-foreground">Loading device info...</p>
+              <div className="space-y-2">
+                <div className="h-4 bg-muted rounded animate-pulse"></div>
+                <div className="h-4 bg-muted rounded animate-pulse"></div>
+                <div className="h-4 bg-muted rounded animate-pulse"></div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -271,7 +279,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {liveActivity?.events && liveActivity.events.length > 0 ? (
-                liveActivity.events.map((event, index) => (
+                liveActivity.events.map((event) => (
                   <div key={event.id} className="flex items-start space-x-2 p-2 border border-border rounded-lg">
                     <div className="mt-0.5">
                       {getSeverityIcon(event.severity)}
@@ -293,9 +301,8 @@ export default function Dashboard() {
                 ))
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground">
-                    No activity events available
-                  </p>
+                  <div className="h-4 bg-muted rounded animate-pulse mb-2"></div>
+                  <div className="h-4 bg-muted rounded animate-pulse w-3/4 mx-auto"></div>
                 </div>
               )}
             </div>
@@ -313,31 +320,48 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {wifiNetworks?.networks.map((network) => (
-              <div
-                key={network.bssid}
-                className="flex items-center justify-between p-4 border border-border rounded-lg"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className={`w-3 h-3 rounded-full ${getSignalColor(network.rssi)}`} />
-                  <div>
-                    <h4 className="font-medium">{network.ssid}</h4>
-                    <p className="text-sm text-muted-foreground font-mono">{network.bssid}</p>
-                  </div>
-                  <Badge variant="secondary">Channel {network.channel}</Badge>
-                  <Badge variant="outline">{network.rssi} dBm</Badge>
-                </div>
-                <Button
-                  onClick={() => handleAttack(network)}
-                  variant="destructive"
-                  size="sm"
-                  disabled={isAttacking}
+            {wifiNetworks?.networks ? (
+              wifiNetworks.networks.map((network) => (
+                <div
+                  key={network.bssid}
+                  className="flex items-center justify-between p-4 border border-border rounded-lg"
                 >
-                  <Target className="mr-2 h-4 w-4" />
-                  Attack (Simulated)
-                </Button>
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-3 h-3 rounded-full ${getSignalColor(network.rssi)}`} />
+                    <div>
+                      <h4 className="font-medium">{network.ssid}</h4>
+                      <p className="text-sm text-muted-foreground font-mono">{network.bssid}</p>
+                    </div>
+                    <Badge variant="secondary">Channel {network.channel}</Badge>
+                    <Badge variant="outline">{network.rssi} dBm</Badge>
+                  </div>
+                  <Button
+                    onClick={() => handleAttack(network)}
+                    variant="destructive"
+                    size="sm"
+                    disabled={isAttacking}
+                  >
+                    <Target className="mr-2 h-4 w-4" />
+                    Attack (Simulated)
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-3 h-3 bg-muted rounded-full animate-pulse" />
+                      <div className="space-y-2">
+                        <div className="h-4 bg-muted rounded animate-pulse w-24"></div>
+                        <div className="h-3 bg-muted rounded animate-pulse w-32"></div>
+                      </div>
+                    </div>
+                    <div className="h-8 bg-muted rounded animate-pulse w-32"></div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
@@ -401,7 +425,7 @@ export default function Dashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {connectedDevices && (
+          {connectedDevices ? (
             <>
               <div className="mb-4">
                 <Badge variant="secondary">
@@ -435,6 +459,19 @@ export default function Dashboard() {
                 </TableBody>
               </Table>
             </>
+          ) : (
+            <div className="space-y-4">
+              <div className="h-6 bg-muted rounded animate-pulse w-32"></div>
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex space-x-4">
+                    <div className="h-4 bg-muted rounded animate-pulse flex-1"></div>
+                    <div className="h-4 bg-muted rounded animate-pulse flex-1"></div>
+                    <div className="h-4 bg-muted rounded animate-pulse flex-1"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
