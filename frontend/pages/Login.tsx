@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { Shield, Loader2 } from 'lucide-react';
-import backend from '~backend/client';
+import { apiClient } from '../src/api/client';
 
 export default function Login() {
   const [email, setEmail] = useState('user@example.com');
@@ -21,7 +21,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await backend.auth.login({ email, password });
+      const response = await apiClient.auth.login({ email, password });
       
       // Show splash animation
       setShowSplash(true);

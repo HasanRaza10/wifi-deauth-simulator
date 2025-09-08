@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
 import { Shield, Save, Eye, Lock, AlertTriangle } from 'lucide-react';
-import backend from '~backend/client';
+import { apiClient } from '../src/api/client';
 
 export default function PasswordSecurity() {
   const [password, setPassword] = useState('');
@@ -34,13 +34,13 @@ export default function PasswordSecurity() {
   const { toast } = useToast();
 
   const strengthMutation = useMutation({
-    mutationFn: (password: string) => backend.passwords.checkStrength({ password }),
+    mutationFn: (password: string) => apiClient.passwords.checkStrength({ password }),
     onSuccess: (data) => setStrengthResult(data),
   });
 
   const saveMutation = useMutation({
     mutationFn: ({ domain, password }: { domain: string; password: string }) =>
-      backend.passwords.savePassword({ domain, password }),
+      apiClient.passwords.savePassword({ domain, password }),
     onSuccess: () => {
       toast({
         title: 'Password Saved',
@@ -54,7 +54,7 @@ export default function PasswordSecurity() {
 
   const { data: savedPasswords, refetch: refetchPasswords } = useQuery({
     queryKey: ['saved-passwords'],
-    queryFn: () => backend.passwords.listPasswords(),
+    queryFn: () => apiClient.passwords.listPasswords(),
   });
 
   const handlePasswordChange = (value: string) => {

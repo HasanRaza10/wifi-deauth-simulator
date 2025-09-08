@@ -1,10 +1,36 @@
 {
-  "name": "leap-app",
+  "name": "wifi-deauth-simulator",
   "version": "1.0.0",
-  "type": "module",
-  "packageManager": "bun",
-  "workspaces": [
-    "backend",
-    "frontend"
-  ]
+  "description": "Wi-Fi De-Authentication Simulator - Educational cybersecurity tool",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd express-backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd express-backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "install:all": "npm install && cd express-backend && npm install && cd ../frontend && npm install",
+    "start": "cd express-backend && npm start",
+    "setup": "npm run install:all && npm run setup:env",
+    "setup:env": "echo 'Please copy env.example files and configure your environment variables'"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "cybersecurity",
+    "wifi",
+    "deauthentication",
+    "simulation",
+    "educational",
+    "express",
+    "react",
+    "typescript"
+  ],
+  "author": "hasanraza6361@gmail.com",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/wifi-deauth-simulator.git"
+  }
 }

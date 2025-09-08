@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Search, Calendar, Globe } from 'lucide-react';
-import backend from '~backend/client';
+import { apiClient } from '../src/api/client';
 
 export default function News() {
   const [searchQuery, setSearchQuery] = useState('cybersecurity');
@@ -13,7 +13,7 @@ export default function News() {
 
   const { data: newsData, isLoading, error } = useQuery({
     queryKey: ['news-feed', searchQuery, currentPage],
-    queryFn: () => backend.news.getNewsFeed({ q: searchQuery, page: currentPage }),
+    queryFn: () => apiClient.news.getNewsFeed({ q: searchQuery, page: currentPage }),
   });
 
   const handleSearch = (e: React.FormEvent) => {

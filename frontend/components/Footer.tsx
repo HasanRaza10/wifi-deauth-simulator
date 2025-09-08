@@ -11,6 +11,8 @@ export default function Footer() {
             <span>Contact: hasanraza6361@gmail.com</span>
           </div>
           <p className="text-xs text-muted-foreground">
+            Built with ❤ using React & TypeScript © 2025. 
+            Source code on GitHub <br />
             For any query, contribution, or issues, feel free to contact us.
           </p>
         </div>

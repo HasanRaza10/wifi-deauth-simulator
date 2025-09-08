@@ -13,9 +13,8 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
 import { Download, Target, Wifi, Monitor, FileDown } from 'lucide-react';
-import backend from '~backend/client';
-import type { WiFiNetwork } from '~backend/simulation/wifi_list';
-import type { ConnectedDevice } from '~backend/simulation/connected_devices';
+import { apiClient } from '../src/api/client';
+import type { WiFiNetwork, ConnectedDevice } from '../src/api/types';
 import LegalBanner from '../components/LegalBanner';
 import RadarAnimation from '../components/RadarAnimation';
 import WiFiStrengthIndicator from '../components/WiFiStrengthIndicator';
@@ -28,17 +27,17 @@ export default function Dashboard() {
 
   const { data: deviceInfo } = useQuery({
     queryKey: ['device-info'],
-    queryFn: () => backend.system.getDeviceInfo(),
+    queryFn: () => apiClient.system.getDeviceInfo(),
   });
 
   const { data: wifiNetworks } = useQuery({
     queryKey: ['wifi-networks'],
-    queryFn: () => backend.simulation.getWiFiList(),
+    queryFn: () => apiClient.simulation.getWiFiList(),
   });
 
   const { data: connectedDevices } = useQuery({
     queryKey: ['connected-devices'],
-    queryFn: () => backend.simulation.getConnectedDevices(),
+    queryFn: () => apiClient.simulation.getConnectedDevices(),
   });
 
   const handleAttack = async (network: WiFiNetwork) => {
@@ -47,7 +46,7 @@ export default function Dashboard() {
     setAttackResult(null);
 
     try {
-      const result = await backend.simulation.simulateDeauth({
+      const result = await apiClient.simulation.simulateDeauth({
         target_bssid: network.bssid,
       });
       setAttackResult(result);
@@ -73,11 +72,11 @@ export default function Dashboard() {
       let data;
       
       if (format === 'csv') {
-        response = await backend.data.exportCSV();
+        response = await apiClient.data.exportCSV();
         filename = response.filename;
         data = response.data;
       } else {
-        response = await backend.data.exportJSON();
+        response = await apiClient.data.exportJSON();
         filename = 'wifi-simulation-data.json';
         data = JSON.stringify(response, null, 2);
       }
