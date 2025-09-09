@@ -75,7 +75,7 @@ export const savePassword = async (
 
     // Demo mode - just return success without saving
     res.status(201).json({
-      id: Math.floor(Math.random() * 1000),
+      id: Math.floor(Math.random() * 1000).toString(),
       domain: domain,
       created_at: new Date().toISOString(),
     });
@@ -92,9 +92,9 @@ export const listPasswords = async (
   try {
     // Demo mode - return mock data
     const passwords = [
-      { id: 1, domain: "example.com", created_at: "2024-01-15T10:30:00Z" },
-      { id: 2, domain: "github.com", created_at: "2024-01-14T15:45:00Z" },
-      { id: 3, domain: "google.com", created_at: "2024-01-13T09:20:00Z" },
+      { id: "1", domain: "example.com", created_at: "2024-01-15T10:30:00Z" },
+      { id: "2", domain: "github.com", created_at: "2024-01-14T15:45:00Z" },
+      { id: "3", domain: "google.com", created_at: "2024-01-13T09:20:00Z" },
     ];
 
     res.json({ passwords });

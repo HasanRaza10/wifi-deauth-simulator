@@ -8,7 +8,7 @@ export const getNewsFeed = async (
 ): Promise<void> => {
   try {
     const query = req.query.q || 'cybersecurity';
-    const page = parseInt(req.query.page as string) || 1;
+    const page = parseInt(String(req.query.page)) || 1;
     const newsApiKey = process.env.NEWS_API_KEY;
 
     if (!newsApiKey) {
@@ -47,7 +47,7 @@ export const getNewsFeed = async (
         throw new Error(`News API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
 
       const articles = data.articles?.map((article: any) => ({
         title: article.title || "No title",

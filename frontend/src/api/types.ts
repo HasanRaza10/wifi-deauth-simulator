@@ -67,6 +67,7 @@ export interface PasswordStrengthResponse {
 }
 
 export interface SavePasswordRequest {
+  user_id: string;
   domain: string;
   password: string;
 }
@@ -83,6 +84,10 @@ export interface SavedPassword {
   created_at: string;
 }
 
+export interface ListPasswordsRequest {
+  user_id: string;
+}
+
 export interface ListPasswordsResponse {
   passwords: SavedPassword[];
 }
@@ -93,6 +98,7 @@ export interface NewsArticle {
   url: string;
   publishedAt: string;
   description?: string;
+  imageUrl?: string;
 }
 
 export interface NewsFeedRequest {
@@ -141,6 +147,7 @@ export interface LoginResponse {
 }
 
 export interface RegisterRequest {
+  name: string;
   email: string;
   password: string;
 }
@@ -151,4 +158,17 @@ export interface RegisterResponse {
     email: string;
     role: string;
   };
+}
+
+export interface LiveActivityEvent {
+  id: string;
+  type: string;
+  message: string;
+  timestamp: string;
+  severity: 'low' | 'medium' | 'high';
+  details: Record<string, any>;
+}
+
+export interface LiveActivityResponse {
+  events: LiveActivityEvent[];
 }

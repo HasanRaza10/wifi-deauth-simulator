@@ -12,9 +12,19 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
-import { Download, Target, Wifi, Monitor, FileDown } from 'lucide-react';
+import { Download, Target, Wifi, Monitor, FileDown, Activity, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { apiClient } from '../src/api/client';
-import type { WiFiNetwork, ConnectedDevice } from '../src/api/types';
+import type { 
+  WiFiNetwork, 
+  ConnectedDevice, 
+  DeviceInfo, 
+  WiFiListResponse, 
+  ConnectedDevicesResponse, 
+  LiveActivityResponse,
+  LiveActivityEvent,
+  DeauthResponse,
+  DeauthEvent
+} from '../src/api/types';
 import LegalBanner from '../components/LegalBanner';
 import RadarAnimation from '../components/RadarAnimation';
 import WiFiStrengthIndicator from '../components/WiFiStrengthIndicator';
@@ -22,22 +32,53 @@ import WiFiStrengthIndicator from '../components/WiFiStrengthIndicator';
 export default function Dashboard() {
   const [selectedNetwork, setSelectedNetwork] = useState<WiFiNetwork | null>(null);
   const [isAttacking, setIsAttacking] = useState(false);
-  const [attackResult, setAttackResult] = useState<any>(null);
+  const [attackResult, setAttackResult] = useState<DeauthResponse | null>(null);
   const { toast } = useToast();
 
-  const { data: deviceInfo } = useQuery({
+  const { data: deviceInfo } = useQuery<DeviceInfo>({
     queryKey: ['device-info'],
     queryFn: () => apiClient.system.getDeviceInfo(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const { data: wifiNetworks } = useQuery({
+  const { data: wifiNetworks } = useQuery<WiFiListResponse>({
     queryKey: ['wifi-networks'],
     queryFn: () => apiClient.simulation.getWiFiList(),
+    staleTime: 30 * 1000, // 30 seconds
   });
 
-  const { data: connectedDevices } = useQuery({
+  const { data: connectedDevices } = useQuery<ConnectedDevicesResponse>({
     queryKey: ['connected-devices'],
     queryFn: () => apiClient.simulation.getConnectedDevices(),
+    staleTime: 10 * 1000, // 10 seconds
+  });
+
+  const { data: liveActivity, refetch: refetchActivity } = useQuery<LiveActivityResponse>({
+    queryKey: ['live-activity'],
+    queryFn: async () => {
+      try {
+        return await apiClient.simulation.getLiveActivity();
+      } catch (error) {
+        console.error('Failed to fetch live activity:', error);
+        // Return fallback data if the API fails
+        return {
+          events: [
+            {
+              id: "fallback_001",
+              type: "scan" as const,
+              message: "System initialized - monitoring network activity",
+              timestamp: new Date().toISOString(),
+              severity: "low" as const,
+              details: {},
+            },
+          ],
+        };
+      }
+    },
+    refetchInterval: 15000, // Refresh every 15 seconds
+    retry: 1,
+    retryDelay: 2000,
+    staleTime: 10 * 1000, // 10 seconds
   });
 
   const handleAttack = async (network: WiFiNetwork) => {
@@ -55,6 +96,11 @@ export default function Dashboard() {
         title: 'Simulation Started',
         description: `Mock deauth attack on ${network.ssid} initiated`,
       });
+      
+      // Refresh activity feed
+      setTimeout(() => {
+        refetchActivity();
+      }, 1000);
     } catch (error) {
       console.error('Attack simulation error:', error);
       toast({
@@ -67,16 +113,15 @@ export default function Dashboard() {
 
   const handleExport = async (format: 'csv' | 'json') => {
     try {
-      let response;
-      let filename;
-      let data;
+      let filename: string;
+      let data: string;
       
       if (format === 'csv') {
-        response = await apiClient.data.exportCSV();
+        const response = await apiClient.data.exportCSV();
         filename = response.filename;
         data = response.data;
       } else {
-        response = await apiClient.data.exportJSON();
+        const response = await apiClient.data.exportJSON();
         filename = 'wifi-simulation-data.json';
         data = JSON.stringify(response, null, 2);
       }
@@ -115,6 +160,32 @@ export default function Dashboard() {
     return 'bg-red-500';
   };
 
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case 'high':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case 'medium':
+        return <Info className="h-4 w-4 text-yellow-500" />;
+      case 'low':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      default:
+        return <Info className="h-4 w-4 text-blue-500" />;
+    }
+  };
+
+  const getSeverityBadgeVariant = (severity: string) => {
+    switch (severity) {
+      case 'high':
+        return 'destructive';
+      case 'medium':
+        return 'default';
+      case 'low':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
       <LegalBanner />
@@ -126,7 +197,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Device Information */}
         <Card>
           <CardHeader>
@@ -152,7 +223,11 @@ export default function Dashboard() {
                 </div>
               </>
             ) : (
-              <p className="text-muted-foreground">Loading device info...</p>
+              <div className="space-y-2">
+                <div className="h-4 bg-muted rounded animate-pulse"></div>
+                <div className="h-4 bg-muted rounded animate-pulse"></div>
+                <div className="h-4 bg-muted rounded animate-pulse"></div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -197,6 +272,50 @@ export default function Dashboard() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Live Activity Feed */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Activity className="h-5 w-5" />
+              <span>Live Activity</span>
+            </CardTitle>
+            <CardDescription>
+              Real-time network events
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {liveActivity?.events && liveActivity.events.length > 0 ? (
+                liveActivity.events.map((event: LiveActivityEvent) => (
+                  <div key={event.id} className="flex items-start space-x-2 p-2 border border-border rounded-lg">
+                    <div className="mt-0.5">
+                      {getSeverityIcon(event.severity)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <Badge variant={getSeverityBadgeVariant(event.severity)} className="text-xs">
+                          {event.type}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(event.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground break-words">
+                        {event.message}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <div className="h-4 bg-muted rounded animate-pulse mb-2"></div>
+                  <div className="h-4 bg-muted rounded animate-pulse w-3/4 mx-auto"></div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Available Wi-Fi Networks */}
@@ -209,31 +328,48 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {wifiNetworks?.networks.map((network) => (
-              <div
-                key={network.bssid}
-                className="flex items-center justify-between p-4 border border-border rounded-lg"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className={`w-3 h-3 rounded-full ${getSignalColor(network.rssi)}`} />
-                  <div>
-                    <h4 className="font-medium">{network.ssid}</h4>
-                    <p className="text-sm text-muted-foreground font-mono">{network.bssid}</p>
-                  </div>
-                  <Badge variant="secondary">Channel {network.channel}</Badge>
-                  <Badge variant="outline">{network.rssi} dBm</Badge>
-                </div>
-                <Button
-                  onClick={() => handleAttack(network)}
-                  variant="destructive"
-                  size="sm"
-                  disabled={isAttacking}
+            {wifiNetworks?.networks ? (
+              wifiNetworks.networks.map((network: WiFiNetwork) => (
+                <div
+                  key={network.bssid}
+                  className="flex items-center justify-between p-4 border border-border rounded-lg"
                 >
-                  <Target className="mr-2 h-4 w-4" />
-                  Attack (Simulated)
-                </Button>
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-3 h-3 rounded-full ${getSignalColor(network.rssi)}`} />
+                    <div>
+                      <h4 className="font-medium">{network.ssid}</h4>
+                      <p className="text-sm text-muted-foreground font-mono">{network.bssid}</p>
+                    </div>
+                    <Badge variant="secondary">Channel {network.channel}</Badge>
+                    <Badge variant="outline">{network.rssi} dBm</Badge>
+                  </div>
+                  <Button
+                    onClick={() => handleAttack(network)}
+                    variant="destructive"
+                    size="sm"
+                    disabled={isAttacking}
+                  >
+                    <Target className="mr-2 h-4 w-4" />
+                    Attack (Simulated)
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-3 h-3 bg-muted rounded-full animate-pulse" />
+                      <div className="space-y-2">
+                        <div className="h-4 bg-muted rounded animate-pulse w-24"></div>
+                        <div className="h-3 bg-muted rounded animate-pulse w-32"></div>
+                      </div>
+                    </div>
+                    <div className="h-8 bg-muted rounded animate-pulse w-32"></div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
@@ -269,7 +405,7 @@ export default function Dashboard() {
                   <div>
                     <h4 className="font-medium mb-2">Simulation Events</h4>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {attackResult.events.map((event: any, index: number) => (
+                      {attackResult.events.map((event: DeauthEvent, index: number) => (
                         <div key={index} className="text-xs p-2 bg-muted rounded border-l-2 border-red-500">
                           <span className="font-medium">{event.type}:</span>
                           {event.from && <span> from {event.from}</span>}
@@ -297,7 +433,7 @@ export default function Dashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {connectedDevices && (
+          {connectedDevices ? (
             <>
               <div className="mb-4">
                 <Badge variant="secondary">
@@ -316,7 +452,7 @@ export default function Dashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {connectedDevices.devices.map((device, index) => (
+                  {connectedDevices.devices.map((device: ConnectedDevice, index: number) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">{device.device_name}</TableCell>
                       <TableCell className="font-mono text-sm">{device.ip}</TableCell>
@@ -331,6 +467,19 @@ export default function Dashboard() {
                 </TableBody>
               </Table>
             </>
+          ) : (
+            <div className="space-y-4">
+              <div className="h-6 bg-muted rounded animate-pulse w-32"></div>
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex space-x-4">
+                    <div className="h-4 bg-muted rounded animate-pulse flex-1"></div>
+                    <div className="h-4 bg-muted rounded animate-pulse flex-1"></div>
+                    <div className="h-4 bg-muted rounded animate-pulse flex-1"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

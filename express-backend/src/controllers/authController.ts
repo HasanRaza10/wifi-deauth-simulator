@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import { pool } from '../config/database';
 import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, User } from '../types';
 import { createError } from '../middleware/errorHandler';
@@ -21,7 +21,7 @@ export const login = async (
       // Create JWT token
       const token = jwt.sign(
         {
-          userId: 1,
+          userId: "1",
           email: email,
           role: 'user',
         },
@@ -39,7 +39,7 @@ export const login = async (
 
       res.json({
         user: {
-          id: 1,
+          id: "1",
           email: email,
           role: 'user',
         },
@@ -75,7 +75,7 @@ export const register = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { name, email, password } = req.body;
 
     // Check if user already exists
     const existingUser = await pool.query(

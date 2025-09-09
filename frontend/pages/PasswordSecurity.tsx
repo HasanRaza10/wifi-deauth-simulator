@@ -23,15 +23,24 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
-import { Shield, Save, Eye, Lock, AlertTriangle } from 'lucide-react';
+import { Shield, Save, Eye, EyeOff, Lock, AlertTriangle } from 'lucide-react';
 import { apiClient } from '../src/api/client';
 
 export default function PasswordSecurity() {
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [domain, setDomain] = useState('');
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [strengthResult, setStrengthResult] = useState<any>(null);
   const { toast } = useToast();
+
+  // Get current user from localStorage
+  const getCurrentUser = () => {
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
+  };
+
+  const currentUser = getCurrentUser();
 
   const strengthMutation = useMutation({
     mutationFn: (password: string) => apiClient.passwords.checkStrength({ password }),
@@ -39,8 +48,8 @@ export default function PasswordSecurity() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: ({ domain, password }: { domain: string; password: string }) =>
-      apiClient.passwords.savePassword({ domain, password }),
+    mutationFn: ({ user_id, domain, password }: { user_id: string; domain: string; password: string }) =>
+      apiClient.passwords.savePassword({ user_id, domain, password }),
     onSuccess: () => {
       toast({
         title: 'Password Saved',
@@ -53,8 +62,12 @@ export default function PasswordSecurity() {
   });
 
   const { data: savedPasswords, refetch: refetchPasswords } = useQuery({
-    queryKey: ['saved-passwords'],
-    queryFn: () => apiClient.passwords.listPasswords(),
+    queryKey: ['saved-passwords', currentUser?.id],
+    queryFn: () => {
+      if (!currentUser?.id) return { passwords: [] };
+      return apiClient.passwords.listPasswords({ user_id: currentUser.id });
+    },
+    enabled: !!currentUser?.id,
   });
 
   const handlePasswordChange = (value: string) => {
@@ -67,6 +80,15 @@ export default function PasswordSecurity() {
   };
 
   const handleSave = () => {
+    if (!currentUser?.id) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to save passwords.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!domain.trim()) {
       toast({
         title: 'Domain Required',
@@ -75,7 +97,12 @@ export default function PasswordSecurity() {
       });
       return;
     }
-    saveMutation.mutate({ domain: domain.trim(), password });
+    
+    saveMutation.mutate({ 
+      user_id: currentUser.id, 
+      domain: domain.trim(), 
+      password 
+    });
   };
 
   const getStrengthColor = (score: number) => {
@@ -122,13 +149,29 @@ export default function PasswordSecurity() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">Enter Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => handlePasswordChange(e.target.value)}
-                placeholder="Type your password here..."
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                  placeholder="Type your password here..."
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
             </div>
 
             {strengthResult && (
@@ -166,7 +209,7 @@ export default function PasswordSecurity() {
                 <div className="flex space-x-2">
                   <Button
                     onClick={() => setShowSaveDialog(true)}
-                    disabled={strengthResult.score <= 2}
+                    disabled={strengthResult.score <= 2 || !currentUser}
                     className="flex-1"
                   >
                     <Save className="mr-2 h-4 w-4" />
@@ -175,11 +218,18 @@ export default function PasswordSecurity() {
                   <Button
                     onClick={() => refetchPasswords()}
                     variant="outline"
+                    disabled={!currentUser}
                   >
                     <Eye className="mr-2 h-4 w-4" />
                     View Saved
                   </Button>
                 </div>
+                
+                {!currentUser && (
+                  <p className="text-xs text-muted-foreground">
+                    Please log in to save and view passwords
+                  </p>
+                )}
               </div>
             )}
           </CardContent>
@@ -231,12 +281,12 @@ export default function PasswordSecurity() {
       </div>
 
       {/* Saved Passwords */}
-      {savedPasswords && savedPasswords.passwords.length > 0 && (
+      {currentUser && savedPasswords && savedPasswords.passwords.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Lock className="h-5 w-5" />
-              <span>Saved Passwords</span>
+              <span>Your Saved Passwords</span>
             </CardTitle>
             <CardDescription>
               Your securely stored passwords (encrypted)

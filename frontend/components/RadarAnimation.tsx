@@ -7,7 +7,7 @@ interface RadarAnimationProps {
 
 export default function RadarAnimation({ isActive, onAnimationComplete }: RadarAnimationProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const canvas = canvasRef.current;

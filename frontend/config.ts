@@ -1,11 +1,31 @@
-// The News API key for fetching cybersecurity news
-// This key is used server-side only and should not be exposed to the client
-export const newsApiKey = "d872c1a1fcbc42aa9a6475e8c0bc3bd6";
-
 // Application configuration
 export const config = {
   appName: "Wi-Fi De-Authentication Tool",
   version: "1.0.0",
   description: "Educational cybersecurity simulation tool",
   author: "hasanraza6361@gmail.com",
+  
+  // Feature flags
+  features: {
+    newsIntegration: false, // Disabled to avoid API dependency
+    realTimeUpdates: true,
+    exportData: true,
+    passwordSecurity: true,
+  },
+  
+  // Demo configuration
+  demo: {
+    allowedEmailDomains: ["example.com"],
+    defaultCredentials: {
+      email: "user@example.com",
+      password: "DevOnlyPassword!234",
+    },
+  },
+  
+  // UI configuration
+  ui: {
+    animationDuration: 300,
+    toastDuration: 3000,
+    refreshInterval: 15000, // 15 seconds for live updates
+  },
 };

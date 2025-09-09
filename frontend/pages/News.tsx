@@ -4,14 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Search, Calendar, Globe } from 'lucide-react';
+import { ExternalLink, Search, Calendar, Globe, Image } from 'lucide-react';
 import { apiClient } from '../src/api/client';
+import type { NewsFeedResponse, NewsArticle } from '../src/api/types';
 
 export default function News() {
   const [searchQuery, setSearchQuery] = useState('cybersecurity');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: newsData, isLoading, error } = useQuery({
+  const { data: newsData, isLoading, error } = useQuery<NewsFeedResponse>({
     queryKey: ['news-feed', searchQuery, currentPage],
     queryFn: () => apiClient.news.getNewsFeed({ q: searchQuery, page: currentPage }),
   });
@@ -122,16 +123,35 @@ export default function News() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {newsData.articles.map((article, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
+              {newsData.articles.map((article: NewsArticle, index: number) => (
+                <Card key={index} className="hover:shadow-lg transition-shadow overflow-hidden">
+                  {/* Article Image */}
+                  {article.imageUrl ? (
+                    <div className="relative h-48 overflow-hidden">
+                      <img
+                        src={article.imageUrl}
+                        alt={article.title}
+                        className="w-full h-full object-cover transition-transform hover:scale-105"
+                        onError={(e) => {
+                          // Hide image if it fails to load
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative h-48 bg-muted flex items-center justify-center">
+                      <Image className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                  )}
+                  
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg leading-tight">
+                    <CardTitle className="text-lg leading-tight line-clamp-2">
                       {article.title}
                     </CardTitle>
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                       <div className="flex items-center space-x-1">
                         <Globe className="h-3 w-3" />
-                        <span>{article.source}</span>
+                        <span className="truncate">{article.source}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Calendar className="h-3 w-3" />

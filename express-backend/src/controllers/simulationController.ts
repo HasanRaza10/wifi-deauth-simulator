@@ -145,3 +145,43 @@ export const getConnectedDevices = async (
     next(error);
   }
 };
+
+export const getLiveActivity = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // Simulated live activity events
+    const events = [
+      {
+        id: "event_001",
+        type: "scan",
+        message: "Network scan completed - 5 networks detected",
+        timestamp: new Date().toISOString(),
+        severity: "low" as const,
+        details: { networks_found: 5 }
+      },
+      {
+        id: "event_002", 
+        type: "connection",
+        message: "New device connected to Campus_WiFi",
+        timestamp: new Date(Date.now() - 30000).toISOString(),
+        severity: "medium" as const,
+        details: { device: "iPhone-12", mac: "AA:BB:CC:DD:EE:FF" }
+      },
+      {
+        id: "event_003",
+        type: "deauth",
+        message: "Deauthentication attack simulated on Lab_AP",
+        timestamp: new Date(Date.now() - 60000).toISOString(),
+        severity: "high" as const,
+        details: { target: "Lab_AP", devices_affected: 3 }
+      }
+    ];
+
+    res.json({ events });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -32,6 +32,9 @@ export const validateLogin: ValidationChain[] = [
 ];
 
 export const validateRegister: ValidationChain[] = [
+  body('name')
+    .isLength({ min: 1 })
+    .withMessage('Name is required'),
   body('email')
     .isEmail()
     .normalizeEmail()

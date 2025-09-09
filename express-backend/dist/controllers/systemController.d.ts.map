@@ -1,0 +1,1 @@
+{"version":3,"file":"systemController.d.ts","sourceRoot":"","sources":["../../src/controllers/systemController.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,QAAQ,EAAE,YAAY,EAAE,MAAM,SAAS,CAAC;AAC1D,OAAO,EAAE,UAAU,EAAE,MAAM,UAAU,CAAC;AAEtC,eAAO,MAAM,aAAa,GACxB,KAAK,OAAO,EACZ,KAAK,QAAQ,CAAC,UAAU,CAAC,EACzB,MAAM,YAAY,KACjB,OAAO,CAAC,IAAI,CAad,CAAC"}
